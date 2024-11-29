@@ -1,0 +1,4 @@
+ALL_config="/etc/mkinitcpio.conf"
+ALL_kver="/boot/6.6.30-gba9a882092b1/Image"
+PRESETS=('default')
+default_image="/boot/initramfs-linux.img"

@@ -1,0 +1,9 @@
+for_window [app_id="regreet"] fullscreen disable
+
+# This isn't working well yet
+exec "gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true"
+exec "env SQUEEKBOARD_DEBUG=force-show squeekboard &"
+# exec "squeekboard &"
+exec "regreet; swaymsg exit"
+# exec "gtkgreet -l; swaymsg exit"
+include /etc/sway/config.d/*
