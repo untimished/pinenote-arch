@@ -242,31 +242,19 @@ as:
 ```bash
 # create a user account
 # Note: In arch 'wheel' group is used for admin privileges - instead of 'sudo' group in Debian
-useradd -m -G wheel -s /bin/bash user
+useradd -M -G wheel,dialout,audio,video,plugdev,bluetooth,render,input -s /bin/bash user
 
 passwd user  # set to 1234 or whatever
 
 # Enable sudo for wheel group and add the wheel 
-vim /etc/sudoers.d/wheel
+EDITOR=vim visudo -f /etc/sudoers.d/wheel
 ```
 with this:
 ```
-  %wheel ALL=(ALL:ALL) ALL
+%wheel ALL=(ALL:ALL) ALL
 ```
 
-Next, create groups and user "user"
-```bash
-# Create necessary groups (if they don't exist)
-groupadd dialout
-groupadd plugdev
-groupadd bluetooth
-groupadd render # might already exist
-groupadd input # might already exist
-
-useradd -m -G dialout,sudo,audio,video,plugdev,users,bluetooth,render,input user
-
-```
-Enable network manager:
+### NetworkManager:
 ```bash
 # Enable NetworkManager
 systemctl enable NetworkManager
@@ -350,7 +338,6 @@ with this:
   user = "user"
 
   [environment]
-  DISPLAY = ":1"
   XDG_SESSION_TYPE = "wayland"
   WLR_RENDERER = "pixman" ## added this after some debugging not sure is helping
   WLR_RENDERER_ALLOW_SOFTWARE = "1" ## added this after some debugging not sure is helping
@@ -406,12 +393,8 @@ manually unmount all chroot filesystem or use `pine_chroot.sh -u`
 ```bash
 exit
 cd ~
-sudo umount /mnt/dev/pts
-sudo umount /mnt/dev
-sudo umount /mnt/proc
-sudo umount /mnt/sys
-sudo umount /mnt/run
-sudo umount /mnt
+
+umount -R /mnt
 
 sudo reboot
 ```

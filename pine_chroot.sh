@@ -13,11 +13,7 @@ OS2_PART="/dev/disk/by-partlabel/os2"
 # Function to unmount everything
 unmount_all() {
     echo "Unmounting filesystems..."
-    umount -R ${MOUNT_POINT}/dev/pts 2>/dev/null
-    umount -R ${MOUNT_POINT}/dev 2>/dev/null
-    umount -R ${MOUNT_POINT}/proc 2>/dev/null
-    umount -R ${MOUNT_POINT}/sys 2>/dev/null
-    umount -R ${MOUNT_POINT}/run 2>/dev/null
+    cd ~  # Make sure we're not in any mounted directory
     umount -R ${MOUNT_POINT} 2>/dev/null
     echo "Unmounting complete"
     exit 0
