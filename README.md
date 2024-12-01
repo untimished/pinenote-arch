@@ -1,17 +1,24 @@
 # PineNote Arch Linux installation from Debian
 
+Here are two methods to install Arch Linux on the PineNote's `os2` partition using the Debian installation on `os1`:
+
+- Method 1: Using pacstrap from Debian (original method)
+- Method 2: Using direct chroot from Arch ARM rootfs (alternative method)
+
+## Method 1: Installation using pacstrap
+
 These instructions are a rough guide to install Arch Linux to `os2` using the Debian installation on `os1`. They are pieced together from my shell history, so they haven't been tested.
 
-## Preparation
+### Preparation
 
-### Partitioning
+#### Partitioning
 
 ```bash
 sudo mkfs.ext4 /dev/disk/by-partlabel/os2
 sudo mount /dev/disk/by-partlabel/os2 /mnt
 ```
 
-### Installation of `pacman` and `pacstrap`
+#### Installation of `pacman` and `pacstrap`
 
 ```bash
 sudo apt install pacman-package-manager arch-install-scripts
@@ -31,7 +38,7 @@ rm /tmp/tmp.conf
 sudo pacman-key --populate archlinuxarm
 ```
 
-### Installation
+#### Installation
 ```bash
 # Adapt to your needs
 sudo pacstrap /mnt base mkinitcpio uboot-tools archlinuxarm-keyring linux-firmware sway waybar foot xournalpp openssh base-devel git go tmux \
@@ -74,3 +81,356 @@ $ # maybe network manager stuff
 $ exit
 $ sync && umount -R /mnt
 ```
+
+## Method 2: Installation using Arch ARM rootfs
+
+This should work with the caviat of the issues with NetworkManager and Sway described. The following is what I reassembled from my notes so it is untested, pls give this a go and give feedback.
+
+As I was debugging some issues I had to mount and unmount chroot filesystems multiple times so I provide here a hand bash script (pine_chroot.sh) to do this quickly after the initial setup is done.
+
+### Initial Setup
+```bash
+# Create working directory and download rootfs
+mkdir ~/alarm-bootstrap &amp;&amp; cd ~/alarm-bootstrap
+wget http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz
+
+# Format and mount os2
+sudo mkfs.ext4 /dev/disk/by-partlabel/os2
+sudo mount /dev/disk/by-partlabel/os2 /mnt
+
+# Extract rootfs
+sudo tar xpf ArchLinuxARM-aarch64-latest.tar.gz -C /mnt
+```
+
+### Mount Filesystems and Copy Debian Files
+```bash
+# Mount necessary filesystems
+sudo mount -t proc /proc /mnt/proc
+sudo mount -t sysfs /sys /mnt/sys
+sudo mount -o bind /dev /mnt/dev
+sudo mount -o bind /dev/pts /mnt/dev/pts
+sudo mount -o bind /run /mnt/run
+
+# Copy firmware and configuration files
+sudo cp -rp /usr/lib/firmware/rockchip /mnt/usr/lib/firmware/
+sudo cp /etc/resolv.conf /mnt/etc/resolv.conf
+
+# Copy udev rules
+sudo cp /etc/udev/rules.d/10_change_calmatrix.rules /mnt/etc/udev/rules.d/
+sudo cp /etc/udev/rules.d/20_change_device_size.rules /mnt/etc/udev/rules.d/
+sudo cp /etc/udev/rules.d/30_rockchip_ebc.rules /mnt/etc/udev/rules.d/
+sudo cp /etc/udev/rules.d/40_backlight.rules /mnt/etc/udev/rules.d/
+sudo cp /etc/udev/rules.d/81-libinput-pinenote.rules /mnt/etc/udev/rules.d/
+
+# Create home mount point
+sudo mkdir -p /mnt/home
+```
+
+### System Configuration
+I provided a pine_chroot.sh for quick chroot mount/umount in case of need.
+```bash
+# Enter chroot
+sudo chroot /mnt /bin/bash
+```
+
+```bash
+# Configure locales
+pacman -S glibc
+echo "en_GB.UTF-8 UTF-8" >> /etc/locale.gen
+echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+locale-gen
+
+# Set system locale
+echo "LANG=en_GB.UTF-8" > /etc/locale.conf
+
+# Initialize pacman
+pacman-key --init
+pacman -Syu
+
+# Install essential packages
+# Basic system and development tools
+pacman -S base-devel linux-firmware git wget networkmanager
+
+#install wpa_supplicant wireless_tools
+pacman -S wpa_supplicant wireless_tools
+
+# E-ink display related (incomplete list)
+pacman -S sway swaybg foot xournalpp
+
+# Display and input management
+pacman -S greetd greetd-regreet squeekboard
+
+
+```
+
+### Kernel Setup
+
+we are copying files over from debian so we exit chroot. For convenience, do not unmount all the chroot filesystem unless you need to reboot.
+```bash
+# Exit chroot first
+exit
+
+# Copy kernel files from Debian
+sudo cp /boot/vmlinuz-6.12.0-rc2-pinenote-202410092341-00187-g5392aa8e3808 /mnt/boot/Image
+sudo cp /boot/initrd.img-6.12.0-rc2-pinenote-202410092341-00187-g5392aa8e3808 /mnt/boot/uInitrd.img
+sudo cp /boot/emergency/rk3566-pinenote-v1.2.dtb /mnt/boot/
+sudo cp /boot/waveform_firmware_recovered /mnt/boot/
+
+```
+### Boot Configuration
+
+```bash
+sudo vim /mnt/boot/extlinux/extlinux.conf:
+````
+with this content:
+```
+timeout 10
+default pinenote
+menu title Boot Menu
+
+label pinenote
+        linux /boot/Image
+        initrd /boot/uInitrd.img
+        fdt /boot/rk3566-pinenote-v1.2.dtb
+        append root=/dev/mmcblk0p6 ignore_loglevel rw rootwait earlycon console=tty0 console=ttyS2,1500000n8 fw_devlink=off init=/sbin/init
+
+```
+
+### SETUP mkinitcpio (THIS DOES NOT WORK atm but it is not necessary)
+
+We can rely on the debian kernel but this was an attempt to configure mkinitcpio:
+```bash
+# Enter chroot
+sudo chroot /mnt /bin/bash
+
+vim /etc/mkinitcpio.conf
+```
+Edit to suit this:
+```
+MODULES=(rockchip_ebc)
+BINARIES=()
+FILES=()
+#
+# mine had microcode (no need since we are in arm), 
+HOOKS=(base udev autodetect modconf kms keyboard keymap block filesystems fsck) 
+# and typefont is also not needed I think
+```
+then we can try and generate initramfs
+
+```bash
+mkinitcpio -P
+```
+this currently gives error missing rockhip_ebc!
+
+We can proceed anyway thanks to the debian kernel that is already working.
+
+
+### User and System Setup
+
+```bash
+# Re-enter chroot - if you are not in already
+sudo chroot /mnt /bin/bash
+
+#edit fstab to specify what and how to mount partitions
+vim /etc/fstab
+```
+as:
+```
+  /dev/mmcblk0p6 / ext4 defaults 0 1
+  /dev/mmcblk0p7 /home ext4 defaults 0 2
+```
+```bash
+# create a user account
+# Note: In arch 'wheel' group is used for admin privileges - instead of 'sudo' group in Debian
+useradd -m -G wheel -s /bin/bash user
+
+passwd user  # set to 1234 or whatever
+
+# Enable sudo for wheel group and add the wheel 
+vim /etc/sudoers.d/wheel
+```
+with this:
+```
+  %wheel ALL=(ALL:ALL) ALL
+```
+
+Next, create groups and user "user"
+```bash
+# Create necessary groups (if they don't exist)
+groupadd dialout
+groupadd plugdev
+groupadd bluetooth
+groupadd render # might already exist
+groupadd input # might already exist
+
+useradd -m -G dialout,sudo,audio,video,plugdev,users,bluetooth,render,input user
+
+```
+Enable network manager:
+```bash
+# Enable NetworkManager
+systemctl enable NetworkManager
+
+# Disable systemd-networkd (to prevent possible conflicts.. Added this as I was trying to resolve the wifi connection issue
+systemctl disable systemd-networkd.service
+systemctl disable systemd-networkd.socket
+systemctl disable systemd-networkd-wait-online.service
+
+# Enable wpa_supplicant
+systemctl enable wpa_supplicant
+
+```
+
+Configure network manager: I thought I could copy over to arch the conf file but it does not seem to autoconnect to the wifi after boot with the following configuration. Something is wrong but I cannot see it.
+
+```bash
+# exit chroot
+exit
+
+# copy over the configuration files of the networks you have already setup in os1
+# Note: These will only work if the WiFi networks are available and configured in os1
+sudo cp -r /etc/NetworkManager/system-connections/* /mnt/etc/NetworkManager/system-connections/
+sudo chown -R root:root /mnt/etc/NetworkManager/system-connections/*
+sudo chmod 600 /mnt/etc/NetworkManager/system-connections/*
+
+# and we re-enter to do the configs
+# Enter chroot
+sudo chroot /mnt /bin/bash
+
+vim /etc/NetworkManager/NetworkManager.conf
+```
+Edit to look like this:
+```
+  [main]
+  plugins=ifupdown,keyfile
+  dhcp=internal
+
+  [ifupdown]
+  managed=true
+
+  [connection]
+  wifi.powersave=2
+
+  [device]
+  wifi.scan-rand-mac-address=no
+```
+
+and add wifi spec in /etc/NetworkManager/conf.d/
+```bash
+vim /etc/NetworkManager/conf.d/wifi.conf
+```
+with this content:
+```
+  [main]
+  rf.wifi.enabled=true
+  wifi.backend=wpa_supplicant
+```
+
+### Configure Greeter
+
+Configure greetd for the e-ink display:
+
+```bash
+# enable greetd
+systemctl enable greetd
+
+
+# Edit greetd configuration file:
+vim /etc/greetd/config.toml
+```
+
+with this:
+
+```
+  [terminal]
+  vt = 1
+
+  [default_session]
+  command = "sway"
+  user = "user"
+
+  [environment]
+  DISPLAY = ":1"
+  XDG_SESSION_TYPE = "wayland"
+  WLR_RENDERER = "pixman" ## added this after some debugging not sure is helping
+  WLR_RENDERER_ALLOW_SOFTWARE = "1" ## added this after some debugging not sure is helping
+```
+
+Create PAM configurations for greetd and add nopasswordlogin for `user`.
+```bash
+vim /etc/pam.d/greetd
+```
+
+```
+  auth       required     pam_securetty.so
+  auth       requisite    pam_nologin.so
+  auth       include      system-local-login
+  account    include      system-local-login
+  session    include      system-local-login
+
+  # this should add nopassword login to pam
+  auth       sufficient   pam_succeed_if.so user ingroup nopasswdlogin
+```
+
+and this for nopassword login
+```bash
+# Add nopasswdlogin group
+groupadd nopasswdlogin
+usermod -aG nopasswdlogin user
+
+# Add nopasswdlogin to PAM
+echo "auth       sufficient   pam_succeed_if.so user ingroup nopasswdlogin" > /etc/pam.d/greetd
+```
+
+### Configure Sway
+```bash
+# Create sway config in etc
+vim /etc/sway/config.d/pinenote.conf
+```
+with this:
+```
+  # PineNote specific configurations
+  output * bg #FFFFFF solid_color
+
+  # Disable xwayland explicitly: no need for this and X stuff
+  xwayland disable
+
+  # E-ink specific settings
+  output * max_render_time 1000
+  output * adaptive_sync off
+
+```
+
+### reboot
+manually unmount all chroot filesystem or use `pine_chroot.sh -u`
+```bash
+exit
+cd ~
+sudo umount /mnt/dev/pts
+sudo umount /mnt/dev
+sudo umount /mnt/proc
+sudo umount /mnt/sys
+sudo umount /mnt/run
+sudo umount /mnt
+
+sudo reboot
+```
+
+### current issues to work on
+
+system boots with debian kernel, some issues are observed. Please try and replicate:
+
+1. NetworkManager: WIFI does not connect automatically despite the configuration
+- Check NetworkManager and wpa_supplicant are enabled and working properly
+- Systemd-networkd is disabled to prevent conflicts (not sure this is necessary)
+- Unsure but WiFi configurations from Debian should work if properly copied
+
+2. Display: As sway is launched flashes white but fails to properly launche. Unclear what the issue is.
+- EGL/renderer warnings are expected with e-ink display
+- Software rendering is forced through WLR_RENDERER settings
+- Xwayland is disabled as it's not needed
+
+3. Console/Login: cannot login as keyboard input over UART is somehow screwed.
+- UART console might have keyboard input issues
+- SSH can be used for remote access
+- Auto-login through greetd should work
