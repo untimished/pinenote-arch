@@ -134,6 +134,10 @@ sudo chroot /mnt /bin/bash
 ```
 
 ```bash
+# Initialize pacman
+pacman-key --init
+pacman -Syu
+
 # Configure locales
 pacman -S glibc
 echo "en_GB.UTF-8 UTF-8" >> /etc/locale.gen
