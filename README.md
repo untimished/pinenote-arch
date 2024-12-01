@@ -224,7 +224,35 @@ this currently gives error missing rockhip_ebc!
 
 We can proceed anyway thanks to the debian kernel that is already working.
 
+### libinput config
 
+```bash
+vim /mnt/etc/udev/rules.d/81-libinput-pinenote.rules
+```
+to add the additional settings
+```
+# downloaded from https://gitlab.com/hrdl/pinenote-shared/-/blob/main/etc/udev/rules.d/81-libinp
+ut-pinenote.rules
+# install to /etc/udev/rules.d
+ACTION=="remove", GOTO="libinput_device_group_end"
+KERNEL!="event[0-9]*", GOTO="libinput_device_group_end"
+
+ATTRS{phys}=="?*", ATTRS{name}=="cyttsp5", ENV{LIBINPUT_DEVICE_GROUP}="pinenotetouch"
+ATTRS{phys}=="?*", ATTRS{name}=="w9013 2D1F:0095 Stylus", ENV{LIBINPUT_DEVICE_GROUP}="pinenoteto
+uch"
+
+ATTRS{phys}=="?*", ATTRS{name}=="cyttsp5", ENV{LIBINPUT_CALIBRATION_MATRIX}="-1 0 1 0 -1 1"
+
+# Additional PineNote-specific settings suggested by hrdl
+ATTRS{name}=="cyttsp5", ENV{LIBINPUT_ATTR_PALM_PRESSURE_THRESHOLD}="27"
+ATTRS{name}=="cyttsp5", ENV{LIBINPUT_ATTR_THUMB_PRESSURE_THRESHOLD}="28"
+ATTRS{name}=="cyttsp5", ENV{LIBINPUT_ATTR_SIZE_HINT}="210x157"
+#ATTRS{name}=="cyttsp5", ENV{LIBINPUT_ATTR_RESOLUTION_HINT}="4x4"
+#ATTRS{name}=="cyttsp5", ENV{LIBINPUT_ATTR_PALM_SIZE_THRESHOLD}="1"
+
+LABEL="libinput_device_group_end"
+
+```
 ### User and System Setup
 
 ```bash
