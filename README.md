@@ -416,21 +416,18 @@ sudo umount /mnt
 sudo reboot
 ```
 
-### current issues to work on
+### Current Status
 
-system boots with debian kernel, some issues are observed. Please try and replicate:
+This installation method successfully boots to login prompt but has some known issues:
 
-1. NetworkManager: WIFI does not connect automatically despite the configuration
-- Check NetworkManager and wpa_supplicant are enabled and working properly
-- Systemd-networkd is disabled to prevent conflicts (not sure this is necessary)
-- Unsure but WiFi configurations from Debian should work if properly copied
+#### Critical Issues
+- UART keyboard input not working properly, preventing console login
+- Sway not starting correctly after login
+- WiFi doesn't connect automatically, limiting remote access
 
-2. Display: As sway is launched flashes white but fails to properly launche. Unclear what the issue is.
-- EGL/renderer warnings are expected with e-ink display
-- Software rendering is forced through WLR_RENDERER settings
-- Xwayland is disabled as it's not needed
+#### Working Features
+- System boots without errors
+- Basic filesystem setup complete
+- User configuration and permissions set correctly
 
-3. Console/Login: cannot login as keyboard input over UART is somehow screwed.
-- UART console might have keyboard input issues
-- SSH can be used for remote access
-- Auto-login through greetd should work
+PRs or suggestions to fix these issues are welcome.
