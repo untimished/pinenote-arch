@@ -480,12 +480,13 @@ This installation method successfully boots to login prompt but has some known i
 
 #### Critical Issues
 - UART keyboard input not working properly, preventing console login
-- Sway not starting correctly after login
 - WiFi doesn't connect automatically, limiting remote access
+- autologin/login is still a bit buggy
 
 #### Working Features
 - System boots without errors
 - Basic filesystem setup complete
 - User configuration and permissions set correctly
+- Sway starting correctly after login - Allows login via regreet
 
 PRs or suggestions to fix these issues are welcome.
