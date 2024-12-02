@@ -6,5 +6,7 @@ network-manager-applet
 noto-fonts
 noto-fonts-emoji
 nwg-menu
+python-i3ipc
+python-pydbus
 rot8
 wtype
