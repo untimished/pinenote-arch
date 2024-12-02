@@ -19,10 +19,10 @@
     "height": 40,
 
     "modules-left": [
-      // "custom/smenu",
+      "custom/smenu",
       // "custom/okb",
-      "custom/rotate_0",
-      "custom/rotate_90",
+      // "custom/rotate_0",
+      // "custom/rotate_90",
       // "custom/winleft",
       // "custom/winup",
       "custom/windown",
@@ -226,7 +226,7 @@
     "custom/smenu": {
       "format": "",
       "interval": "once",
-      "on-click": "nwg-menu -fm pcmanfm -term foot -va top -isl 48",
+      "on-click": "toggle_menu.sh",
       "min-length": 5,
       "tooltip": false,
     },
