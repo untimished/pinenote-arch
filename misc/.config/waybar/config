@@ -20,7 +20,7 @@
 
     "modules-left": [
       "custom/smenu",
-      // "custom/okb",
+      "custom/okb",
       // "custom/rotate_0",
       // "custom/rotate_90",
       // "custom/winleft",
@@ -218,7 +218,7 @@
     "custom/okb": {
       "format": "",
       "interval": "once",
-      "on-click": "~/.local/bin/toggle_onscreen_keyboard.py",
+      "on-click": "toggle_onscreen_keyboard.py",
       "min-length": 5,
       "tooltip": false,
     },
