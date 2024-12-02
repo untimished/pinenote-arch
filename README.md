@@ -147,19 +147,17 @@ locale-gen
 # Set system locale
 echo "LANG=en_GB.UTF-8" > /etc/locale.conf
 
-# Initialize pacman
-pacman-key --init
-pacman -Syu
+bash # this will update locales in the session
 
 # Install essential packages
 # Basic system and development tools
-pacman -S base-devel linux-firmware git wget networkmanager
+pacman -S base-devel linux-firmware git wget networkmanager network-manager-applet
 
 #install wpa_supplicant wireless_tools
 pacman -S wpa_supplicant wireless_tools
 
 # E-ink display related (incomplete list)
-pacman -S sway swaybg foot xournalpp
+pacman -S sway swaybg waybar foot xournalpp vim
 
 # Display and input management
 pacman -S greetd greetd-regreet squeekboard
@@ -184,7 +182,8 @@ sudo cp /boot/waveform_firmware_recovered /mnt/boot/
 ### Boot Configuration
 
 ```bash
-sudo vim /mnt/boot/extlinux/extlinux.conf:
+sudo mkdir -p /mnt/boot/extlinux
+sudo vim /mnt/boot/extlinux/extlinux.conf
 ````
 with this content:
 ```
@@ -231,7 +230,7 @@ We can proceed anyway thanks to the debian kernel that is already working.
 ### libinput config
 
 ```bash
-vim /mnt/etc/udev/rules.d/81-libinput-pinenote.rules
+sudo vim /mnt/etc/udev/rules.d/81-libinput-pinenote.rules
 ```
 to add the additional settings
 ```
@@ -257,6 +256,17 @@ ATTRS{name}=="cyttsp5", ENV{LIBINPUT_ATTR_SIZE_HINT}="210x157"
 LABEL="libinput_device_group_end"
 
 ```
+
+### broadcome module feature disable
+
+```bash
+vim /etc/modprobe.d/brcmfmac.conf
+```
+with:
+```
+options brcmfmac feature_disable=0x82000
+
+```
 ### User and System Setup
 
 ```bash
@@ -272,6 +282,11 @@ as:
   /dev/mmcblk0p7 /home ext4 defaults 0 2
 ```
 ```bash
+# Create missing groups
+groupadd dialout
+groupadd plugdev
+groupadd bluetooth
+
 # create a user account
 # Note: In arch 'wheel' group is used for admin privileges - instead of 'sudo' group in Debian
 useradd -M -G wheel,dialout,audio,video,plugdev,bluetooth,render,input -s /bin/bash user
@@ -310,12 +325,14 @@ exit
 # copy over the configuration files of the networks you have already setup in os1
 # Note: These will only work if the WiFi networks are available and configured in os1
 sudo cp -r /etc/NetworkManager/system-connections/* /mnt/etc/NetworkManager/system-connections/
-sudo chown -R root:root /mnt/etc/NetworkManager/system-connections/*
-sudo chmod 600 /mnt/etc/NetworkManager/system-connections/*
 
 # and we re-enter to do the configs
 # Enter chroot
 sudo chroot /mnt /bin/bash
+
+# make sure permission and ownership is correct 
+chown -R root:root /etc/NetworkManager/system-connections/*
+sudo chmod 600 /etc/NetworkManager/system-connections/*
 
 vim /etc/NetworkManager/NetworkManager.conf
 ```
@@ -341,9 +358,9 @@ vim /etc/NetworkManager/conf.d/wifi.conf
 ```
 with this content:
 ```
-  [main]
-  rf.wifi.enabled=true
-  wifi.backend=wpa_supplicant
+[main]
+rf.wifi.enabled=true
+wifi.backend=wpa_supplicant
 ```
 
 ### Configure Greeter
@@ -362,19 +379,45 @@ vim /etc/greetd/config.toml
 with this:
 
 ```
-  [terminal]
-  vt = 1
+[terminal]
+# The VT to run the greeter on. Can be "next", "current" or a number
+# designating the VT.
+vt = 1
 
-  [default_session]
-  command = "sway"
-  user = "user"
+# The default session, also known as the greeter.
+[default_session]
+command = "gtkgreet"
+user = "greeter"
 
-  [environment]
-  XDG_SESSION_TYPE = "wayland"
-  WLR_RENDERER = "pixman" ## added this after some debugging not sure is helping
-  WLR_RENDERER_ALLOW_SOFTWARE = "1" ## added this after some debugging not sure is helping
+[initial_session]
+command = "sway -c /etc/greetd/sway-config"
+user = "user"
+
+[environment]
+XDG_SESSION_TYPE = "wayland"
+WLR_RENDERER = "pixman" ## added this after some debugging not sure is helping
+WLR_RENDERER_ALLOW_SOFTWARE = "1" ## added this after some debugging not sure is helping
 ```
 
+add a minimal sway-config file
+
+```bash
+vim /etc/greetd/sway-config
+```
+
+with this content:
+```
+for_window [app_id="regreet"] fullscreen disable
+
+# This isn't working well yet
+exec "gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true"
+exec "env SQUEEKBOARD_DEBUG=force-show squeekboard &"
+# exec "squeekboard &"
+exec "regreet; swaymsg exit"
+# exec "gtkgreet -l; swaymsg exit"
+include /etc/sway/config.d/*
+
+```
 Create PAM configurations for greetd and add nopasswordlogin for `user`.
 ```bash
 vim /etc/pam.d/greetd
@@ -396,9 +439,6 @@ and this for nopassword login
 # Add nopasswdlogin group
 groupadd nopasswdlogin
 usermod -aG nopasswdlogin user
-
-# Add nopasswdlogin to PAM
-echo "auth       sufficient   pam_succeed_if.so user ingroup nopasswdlogin" > /etc/pam.d/greetd
 ```
 
 ### Configure Sway
@@ -423,10 +463,13 @@ with this:
 ### reboot
 manually unmount all chroot filesystem or use `pine_chroot.sh -u`
 ```bash
+#exit chroot
 exit
+
+# make sure we are not in any folder that need unmount
 cd ~
 
-umount -R /mnt
+sudo umount -R /mnt
 
 sudo reboot
 ```
