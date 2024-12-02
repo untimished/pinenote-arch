@@ -157,7 +157,7 @@ pacman -S base-devel linux-firmware git wget networkmanager
 pacman -S wpa_supplicant wireless_tools
 
 # E-ink display related (incomplete list)
-pacman -S sway swaybg waybar foot xournalpp
+pacman -S sway swaybg waybar foot xournalpp vim
 
 # Display and input management
 pacman -S greetd greetd-regreet squeekboard
@@ -182,7 +182,8 @@ sudo cp /boot/waveform_firmware_recovered /mnt/boot/
 ### Boot Configuration
 
 ```bash
-sudo vim /mnt/boot/extlinux/extlinux.conf:
+sudo mkdir -p /mnt/boot/extlinux
+sudo vim /mnt/boot/extlinux/extlinux.conf
 ````
 with this content:
 ```
@@ -229,7 +230,7 @@ We can proceed anyway thanks to the debian kernel that is already working.
 ### libinput config
 
 ```bash
-vim /mnt/etc/udev/rules.d/81-libinput-pinenote.rules
+sudo vim /mnt/etc/udev/rules.d/81-libinput-pinenote.rules
 ```
 to add the additional settings
 ```
@@ -270,6 +271,11 @@ as:
   /dev/mmcblk0p7 /home ext4 defaults 0 2
 ```
 ```bash
+# Create missing groups
+groupadd dialout
+groupadd plugdev
+groupadd bluetooth
+
 # create a user account
 # Note: In arch 'wheel' group is used for admin privileges - instead of 'sudo' group in Debian
 useradd -M -G wheel,dialout,audio,video,plugdev,bluetooth,render,input -s /bin/bash user
