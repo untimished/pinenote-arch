@@ -147,9 +147,7 @@ locale-gen
 # Set system locale
 echo "LANG=en_GB.UTF-8" > /etc/locale.conf
 
-# Initialize pacman
-pacman-key --init
-pacman -Syu
+bash # this will update locales in the session
 
 # Install essential packages
 # Basic system and development tools
@@ -159,7 +157,7 @@ pacman -S base-devel linux-firmware git wget networkmanager
 pacman -S wpa_supplicant wireless_tools
 
 # E-ink display related (incomplete list)
-pacman -S sway swaybg foot xournalpp
+pacman -S sway swaybg waybar foot xournalpp
 
 # Display and input management
 pacman -S greetd greetd-regreet squeekboard
