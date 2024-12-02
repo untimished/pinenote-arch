@@ -1,5 +1,6 @@
 brightnessctl
 iio-sensor-proxy
+jq
 lisgd
 nwg-menu
 rot8
