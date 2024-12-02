@@ -2,6 +2,7 @@ brightnessctl
 iio-sensor-proxy
 jq
 lisgd
+network-manager-applet
 nwg-menu
 rot8
 wtype
