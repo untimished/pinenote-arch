@@ -297,7 +297,7 @@
     },
 
     "custom/ebc_bw1": {
-      "format": "⬜",
+      "format": "1️⃣",
       "interval": "once",
       "on-click": "ebc_bw_set 0",
       "min-length": 5,
@@ -305,7 +305,7 @@
     },
 
     "custom/ebc_bw2": {
-      "format": "⬜",
+      "format": "2️⃣",
       "interval": "once",
       "on-click": "ebc_bw_set 1",
       "min-length": 5,
@@ -313,7 +313,7 @@
     },
 
     "custom/ebc_bw3": {
-      "format": "⬜",
+      "format": "3️⃣",
       "interval": "once",
       "on-click": "ebc_bw_set 2",
       "min-length": 5,
