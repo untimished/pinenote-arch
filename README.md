@@ -87,10 +87,16 @@ $ sync && umount -R /mnt
 
 ## Method 2: Installation using Arch ARM rootfs
 
-The following is what I reassembled from the previous README. It has been tested a couple of times but needs review, pls give feedback.
+A script to install Arch Linux on the PineNote e-ink tablet, converting from an existing Debian installation.
+
+## Overview
+
+This script automates the process of installing Arch Linux ARM on the PineNote device, handling all necessary system configurations, kernel setup, and essential package installation.
+
+```bash
 
 ### Main installation function
-```
+
 main() {
     log "Starting PineNote Arch Linux installation..."
 
@@ -124,6 +130,42 @@ main() {
 }
 ```
 
+
+## Prerequisites
+
+- Root access
+- Running Debian system on PineNote
+- Minimum 6GB free space
+- Minimum 1GB RAM
+- Working internet connection
+
+## basic assumptions (these may change in your case)
+- Required kernel files in `/boot`:
+  - PineNote kernel (`vmlinuz-*-pinenote-*`)
+  - PineNote initrd (`initrd.img-*-pinenote-*`)
+  - DTB file (`/boot/emergency/rk3566-pinenote-v1.2.dtb`)
+  - Waveform firmware (`/boot/waveform_firmware_recovered`)
+
+## Features
+
+- Full system installation and configuration
+- Kernel and firmware setup
+- Network configuration
+- User management
+- E-ink display optimization
+- Input device configuration
+- Essential package installation
+
+## Installation
+
+1. Download the script:
+
+```bash
+wget https://raw.githubusercontent.com/username/pine_debian2arch.sh
+chmod +x pine_debian2arch.sh
+
+```
+
 ### Add bash pine-specific bash scripts
 
 Copy utility scripts from here
@@ -133,6 +175,15 @@ exit
 sudo cp -r [github]/misc/bin/* /mnt/usr/local/bin/
 sudo chmod +x /mnt/usr/local/bin/*
 ```
+
+
+
+## Additional steps to complete the installation 
+
+The above should give a bootable system with console access over ssh or uart. 
+
+The following are necessary steps to have a graphical UI.
+
 
 ### Configure Greeter
 
