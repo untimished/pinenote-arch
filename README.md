@@ -149,24 +149,9 @@ sudo chroot /mnt /bin/bash
 systemctl enable greetd
 ```
 
-
-### Configure Sway
-Use hrdl configs
-
-```
-# exit chroot
-exit
-sudo cp [github]/etc/bi /etc/greetd/
-
-
-```
-
 ### Configure Sway and waybar
-Use hrdl configs
-
 ```
-# exit chroot
-exit
+# we can copy in the .config of user in debian because this will be exactly the same home in arch
 sudo cp [github]misc/.config/* ~/.config/
 
 ```
