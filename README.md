@@ -75,6 +75,9 @@ $ groupadd nopasswdlogin
 $ useradd -MG adm,dialout,sudo,audio,video,plugdev,input,render,bluetooth,nopasswdlogin user
 $ passwd user
 $ # Add first rule `auth       sufficient   pam_succeed_if.so user ingroup nopasswdlogin` to /etc/pam.d/greetd
+$ Fix greeter home directory for gsettings / squeekboard to work
+$ usermod -d /etc/greetd greeter
+$ chown -R greeter:greeter /etc/greetd
 $ mkinitcpio --preset pinenote
 $ mkimage -A arm64 -T ramdisk -n uInitrd -d /boot/initramfs-linux.img /boot/uInitrd.img
 $ # maybe network manager stuff 
