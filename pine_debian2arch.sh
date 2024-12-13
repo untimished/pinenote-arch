@@ -321,7 +321,7 @@ EOF
 
 install_packages() {
     log "Installing essential packages..."
-    arch-chroot "$MOUNT_POINT" /bin/bash << 'EOF'
+    chroot "$MOUNT_POINT" /bin/bash << 'EOF'
     # Prevent installation of linux kernel package
     echo "IgnorePkg = linux-aarch64" >> /etc/pacman.conf
 
@@ -351,7 +351,7 @@ setup_kernel() {
     log "Setting up kernel..."
 
     # Remove any default kernel packages if they were installed
-    arch-chroot "$MOUNT_POINT" /bin/bash << 'EOF'
+    chroot "$MOUNT_POINT" /bin/bash << 'EOF'
     pacman -Rdd --noconfirm linux-aarch64 2>/dev/null || true
     rm -f /boot/initramfs-linux.img 2>/dev/null || true
     rm -f /boot/vmlinuz-linux-aarch64 2>/dev/null || true
