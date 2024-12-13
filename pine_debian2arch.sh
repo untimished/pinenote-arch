@@ -166,7 +166,7 @@ setup_partitions() {
     log "Mounting partitions..."
     mount /dev/disk/by-partlabel/os2 "$MOUNT_POINT" || error "Failed to mount os2"
 
-    log "Extracting rootfs..."
+    log "Extracting rootfs..." # this creates directories with default permissions we need to fix that later
     tar xpf ArchLinuxARM-aarch64-latest.tar.gz -C "$MOUNT_POINT" || error "Failed to extract rootfs"
 }
 
@@ -205,6 +205,12 @@ copy_config_files() {
     else
         warn "No modprobe configurations found in /usr/lib/modprobe.d/"
     fi
+
+    # Fix directory permissions
+    log "Fixing directory permissions..."
+    chmod 700 "$MOUNT_POINT/etc/credstore/" || warn "Failed to set permissions for credstore"
+    chmod 700 "$MOUNT_POINT/etc/credstore.encrypted/" || warn "Failed to set permissions for credstore.encrypted"
+    chmod 755 "$MOUNT_POINT/usr/share/polkit-1/rules.d/" || warn "Failed to set permissions for polkit rules"
 }
 
 copy_kernel_files() {
