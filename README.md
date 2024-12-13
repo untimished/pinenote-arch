@@ -192,6 +192,21 @@ Configure greetd for the e-ink display:
 ```
 
 sudo cp [github]/etc/greetd/* /mnt/etc/greetd/
+
+## enter CHROOT
+# if you use the greeter user, make sure the home directory is properly set and has correct permissions
+
+sudo mkdir -p /var/lib/greeter/.cache
+sudo chown greeter:greeter /var/lib/greeter/.cache
+sudo chmod 755 /var/lib/greeter/.cache
+
+# set the XDG_CACHE_HOME environment variable:
+
+export XDG_CACHE_HOME="$HOME/.cache"
+
+## EXIT CHROOT
+
+
 ```
 
 ```bash
