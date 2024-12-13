@@ -156,35 +156,21 @@ Use hrdl configs
 ```
 # exit chroot
 exit
-sudo cp [github]/etc/bi /mnt/etc/greetd/
+sudo cp [github]/etc/bi /etc/greetd/
 
 
 ```
 
-### Configure Sway
+### Configure Sway and waybar
 Use hrdl configs
 
 ```
 # exit chroot
 exit
-sudo cp [github]misc/.config/sway/* /mnt/etc/sway/
+sudo cp [github]misc/.config/* ~/.config/
 
 ```
 
-### Configure waybar
-Use hrdl configs
-
-```
-# exit chroot
-exit
-sudo cp /mnt/etc/xdg/waybar/config.jsonc /mnt/etc/xdg/waybar/config.jsonc.bk
-sudo cp [github]misc/.config/waybar/config /mnt/etc/xdg/waybar/config.jsonc
-
-sudo cp /mnt/etc/xdg/waybar/style.css /mnt/etc/xdg/waybar/style.css.bk
-sudo cp [github]misc/.config/waybar/style.css /mnt/etc/xdg/waybar/style.css
-
-
-```
 ### reboot
 manually unmount all chroot filesystem or use `pine_chroot.sh -u`
 ```bash
