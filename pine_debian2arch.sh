@@ -340,6 +340,10 @@ install_packages() {
         xf86-input-libinput glib2 gsettings-desktop-schemas wtype \
         alsa-utils alsa-firmware sof-firmware bluez-utils
 
+    pacman -S --noconfirm brightnessctl iio-sensor-proxy jq \ 
+        noto-fonts noto-fonts-emoji nwg-menu python-i3ipc \ 
+        python-pydbus wtype
+
     # NetworkManager related
     pacman -S --noconfirm network-manager-applet gtk3 gtk-layer-shell \
         libappindicator-gtk3
@@ -522,7 +526,7 @@ main() {
     configure_locale
     configure_pacman
     install_packages
-    configure_libinput
+    # configure_libinput we may want to delete this one, the rule in hrdl udev is the same as the one in debian
     copy_system_configs
     setup_users
     configure_network
