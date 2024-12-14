@@ -277,7 +277,7 @@ label l0
         linux $KERNEL_FILE
         initrd $INITRD_FILE
         fdt /boot/rk3566-pinenote-v1.2.dtb
-        append root=/dev/mmcblk0p6 ignore_loglevel rw rootwait earlycon console=tty0 console=ttyS2,1500000n8 fw_devlink=off loglevel=3 systemd.show_status=auto rd.udev.log_level=3 splash plymouth.ignore-serial-consoles vt.global_cursor_default=0
+        append root=/dev/mmcblk0p6 ignore_loglevel rw rootwait earlycon console=tty0 console=ttyS2,1500000n8 fw_devlink=off quiet loglevel=3 systemd.show_status=auto rd.udev.log_level=3 plymouth.ignore-serial-consoles vt.global_cursor_default=0
 EOF
 
     if [ ! -f "$MOUNT_POINT/boot/extlinux/extlinux.conf" ]; then
