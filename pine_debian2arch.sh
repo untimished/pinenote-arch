@@ -328,8 +328,8 @@ EOF
 install_packages() {
     log "Installing essential packages..."
     chroot "$MOUNT_POINT" /bin/bash << 'EOF'
-    # Prevent installation of linux kernel package
-    echo "IgnorePkg = linux-aarch64" >> /etc/pacman.conf
+    # Prevent installation of linux kernel package by adding to [options] section
+    sed -i '/^\[options\]/a IgnorePkg = linux-aarch64' /etc/pacman.conf
 
     # Base packages (removed linux-firmware as it's not needed with Debian kernel)
     pacman -S --noconfirm base-devel git wget networkmanager \
