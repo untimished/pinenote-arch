@@ -351,6 +351,10 @@ install_packages() {
     # E-ink display related
     pacman -S --noconfirm sway swaybg swayidle swaylock waybar foot xournalpp vim
 
+    # fonts required by waybar config
+    sudo pacman -S --noconfirm ttf-font-awesome otf-font-awesome ttf-dejavu noto-fonts \
+    ttf-liberation ttf-droid ttf-roboto ttf-ubuntu-font-family
+
     # Display and input management
     pacman -S --noconfirm greetd greetd-regreet squeekboard
 
