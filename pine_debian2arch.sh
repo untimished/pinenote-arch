@@ -349,10 +349,13 @@ install_packages() {
         libappindicator-gtk3
 
     # E-ink display related
-    pacman -S --noconfirm sway swaybg waybar foot xournalpp vim seatd
+    pacman -S --noconfirm sway swaybg swayidle swaylock waybar foot xournalpp vim
 
     # Display and input management
     pacman -S --noconfirm greetd greetd-regreet squeekboard
+
+    systemctl enable seatd
+
 EOF
 }
 
@@ -429,7 +432,7 @@ setup_users() {
 
     # Create user with specific UID and groups
     useradd -M -u 1000 -g 1000 \
-        -G wheel,dialout,audio,video,input,plugdev,bluetooth,render,storage,power,network \
+        -G wheel,dialout,audio,video,input,plugdev,bluetooth,render,storage,power, seat, network \
         -s /bin/bash user
 
     # Set user password
