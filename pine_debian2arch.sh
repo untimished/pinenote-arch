@@ -349,7 +349,7 @@ install_packages() {
         libappindicator-gtk3
 
     # E-ink display related
-    pacman -S --noconfirm sway swaybg waybar foot xournalpp vim
+    pacman -S --noconfirm sway swaybg waybar foot xournalpp vim seatd
 
     # Display and input management
     pacman -S --noconfirm greetd greetd-regreet squeekboard
