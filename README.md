@@ -161,7 +161,7 @@ main() {
 1. Download the script:
 
 ```bash
-wget https://raw.githubusercontent.com/username/pine_debian2arch.sh
+wget https://raw.githubusercontent.com/hrdl-github/pinenote-arch/refs/heads/main/pine_chroot.sh
 chmod +x pine_debian2arch.sh
 
 ```
