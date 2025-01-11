@@ -42,7 +42,7 @@ sudo pacman-key --populate archlinuxarm
 ```bash
 # Adapt to your needs
 sudo pacstrap /mnt base mkinitcpio uboot-tools archlinuxarm-keyring linux-firmware sway waybar foot xournalpp openssh base-devel git go tmux \
- vulkan-panfrost wget networkmanager network-manager-applet greetd greetd-regreet squeekboard
+ vulkan-panfrost wget networkmanager network-manager-applet greetd greetd-gtkgreet squeekboard
 
 # Obtain kernel. Either follow the instructions in build_kernel.sh or repurpose m-weigand's kernel (untested)
 # TODO: Install kernel. dtb and Image go into /mnt/boot (e.g. /mnt/boot/$(uname -r)/ ), modules into /usr/lib/modules/$(uname -r)
