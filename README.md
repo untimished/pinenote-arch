@@ -87,379 +87,133 @@ $ sync && umount -R /mnt
 
 ## Method 2: Installation using Arch ARM rootfs
 
-This should work with the caviat of the issues with NetworkManager and Sway described. The following is what I reassembled from my notes so it is untested, pls give this a go and give feedback.
+A script to install Arch Linux on the PineNote e-ink tablet, converting from an existing Debian installation.
 
-As I was debugging some issues I had to mount and unmount chroot filesystems multiple times so I provide here a hand bash script (pine_chroot.sh) to do this quickly after the initial setup is done.
+## Overview
 
-### Initial Setup
-```bash
-# Create working directory and download rootfs
-mkdir ~/alarm-bootstrap &amp;&amp; cd ~/alarm-bootstrap
-wget http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz
-
-# Format and mount os2
-sudo mkfs.ext4 /dev/disk/by-partlabel/os2
-sudo mount /dev/disk/by-partlabel/os2 /mnt
-
-# Extract rootfs
-sudo tar xpf ArchLinuxARM-aarch64-latest.tar.gz -C /mnt
-```
-
-### Mount Filesystems and Copy Debian Files
-```bash
-# Mount necessary filesystems
-sudo mount -t proc /proc /mnt/proc
-sudo mount -t sysfs /sys /mnt/sys
-sudo mount -o bind /dev /mnt/dev
-sudo mount -o bind /dev/pts /mnt/dev/pts
-sudo mount -o bind /run /mnt/run
-
-# Copy firmware and configuration files
-sudo cp -rp /usr/lib/firmware/rockchip /mnt/usr/lib/firmware/
-sudo cp /etc/resolv.conf /mnt/etc/resolv.conf
-
-# Copy udev rules
-sudo cp /etc/udev/rules.d/10_change_calmatrix.rules /mnt/etc/udev/rules.d/
-sudo cp /etc/udev/rules.d/20_change_device_size.rules /mnt/etc/udev/rules.d/
-sudo cp /etc/udev/rules.d/30_rockchip_ebc.rules /mnt/etc/udev/rules.d/
-sudo cp /etc/udev/rules.d/40_backlight.rules /mnt/etc/udev/rules.d/
-sudo cp /etc/udev/rules.d/81-libinput-pinenote.rules /mnt/etc/udev/rules.d/
-
-# Create home mount point
-sudo mkdir -p /mnt/home
-```
-
-### System Configuration
-I provided a pine_chroot.sh for quick chroot mount/umount in case of need.
-```bash
-# Enter chroot
-sudo chroot /mnt /bin/bash
-```
+This script automates the process of installing Arch Linux ARM on the PineNote device, handling all necessary system configurations, kernel setup, and essential package installation.
 
 ```bash
-# Initialize pacman
-pacman-key --init
-pacman -Syu
 
-# Configure locales
-pacman -S glibc
-echo "en_GB.UTF-8 UTF-8" >> /etc/locale.gen
-echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
-locale-gen
+### Main installation function
 
-# Set system locale
-echo "LANG=en_GB.UTF-8" > /etc/locale.conf
+main() {
+    log "Starting PineNote Arch Linux installation..."
 
-bash # this will update locales in the session
+    check_root
+    check_required_files
+    check_and_unmount "$MOUNT_POINT" "/dev/disk/by-partlabel/os2"
+    setup_environment
+    setup_partitions    # this will format OS2 partition !!
+    mount_system_dirs
+    copy_config_files
+    copy_kernel_files   # copying the kernel from debian to /boot/
+    copy_kernel_modules # copying the kernel modules from debian kernel
+    configure_boot      # setting up extlinux.conf 
+    configure_fstab  
+    
+    log "Installation of base system completed successfully!"
+    
+    configure_locale     # currently set up for en_GB.UTF-8
+    configure_pacman 
+    install_packages     # here we prevent the install of the arm kernel from arch because we have debian kernel
+    configure_libinput   # appending some custom configs for touch input
+    copy_system_configs  # copying modprobe.d/* configs from debian
+    setup_users          # setting up "user" with GID 1000 so that it shares the same home with debian
+    configure_network    # copying over wifi settings from debian, including any wpa saved config
 
-# Install essential packages
-# Basic system and development tools
-pacman -S base-devel linux-firmware git wget networkmanager network-manager-applet
+    note_aur_packages
 
-#install wpa_supplicant wireless_tools
-pacman -S wpa_supplicant wireless_tools
-
-# E-ink display related (incomplete list)
-pacman -S sway swaybg waybar foot xournalpp vim
-
-# Display and input management
-pacman -S greetd greetd-regreet squeekboard
-
-
+    
+    log "Installation completed successfully!"
+    log "Please configure greetd, sway and waybar before reboot"
+}
 ```
 
-### Kernel Setup
 
-we are copying files over from debian so we exit chroot. For convenience, do not unmount all the chroot filesystem unless you need to reboot.
-```bash
-# Exit chroot first
-exit
+## Prerequisites
 
-# Copy kernel files from Debian
-sudo cp /boot/vmlinuz-6.12.0-rc2-pinenote-202410092341-00187-g5392aa8e3808 /mnt/boot/Image
-sudo cp /boot/initrd.img-6.12.0-rc2-pinenote-202410092341-00187-g5392aa8e3808 /mnt/boot/uInitrd.img
-sudo cp /boot/emergency/rk3566-pinenote-v1.2.dtb /mnt/boot/
-sudo cp /boot/waveform_firmware_recovered /mnt/boot/
+- Root access
+- Running Debian system on PineNote
+- Minimum 6GB free space
+- Minimum 1GB RAM
+- Working internet connection
 
-```
-### Boot Configuration
+## basic assumptions (these may change in your case)
+- Required kernel files in `/boot`:
+  - PineNote kernel (`vmlinuz-*-pinenote-*`)
+  - PineNote initrd (`initrd.img-*-pinenote-*`)
+  - DTB file (`/boot/emergency/rk3566-pinenote-v1.2.dtb`)
+  - Waveform firmware (`/boot/waveform_firmware_recovered`)
 
-```bash
-sudo mkdir -p /mnt/boot/extlinux
-sudo vim /mnt/boot/extlinux/extlinux.conf
-````
-with this content:
-```
-timeout 10
-default pinenote
-menu title Boot Menu
+## Features
 
-label pinenote
-        linux /boot/Image
-        initrd /boot/uInitrd.img
-        fdt /boot/rk3566-pinenote-v1.2.dtb
-        append root=/dev/mmcblk0p6 ignore_loglevel rw rootwait earlycon console=tty0 console=ttyS2,1500000n8 fw_devlink=off init=/sbin/init
+- Full system installation and configuration
+- Kernel and firmware setup
+- Network configuration
+- User management
+- E-ink display optimization
+- Input device configuration
+- Essential package installation
 
-```
+## Installation
 
-### SETUP mkinitcpio (THIS DOES NOT WORK atm but it is not necessary)
-
-We can rely on the debian kernel but this was an attempt to configure mkinitcpio:
-```bash
-# Enter chroot
-sudo chroot /mnt /bin/bash
-
-vim /etc/mkinitcpio.conf
-```
-Edit to suit this:
-```
-MODULES=(rockchip_ebc)
-BINARIES=()
-FILES=()
-#
-# mine had microcode (no need since we are in arm), 
-HOOKS=(base udev autodetect modconf kms keyboard keymap block filesystems fsck) 
-# and typefont is also not needed I think
-```
-then we can try and generate initramfs
+1. Download the script:
 
 ```bash
-mkinitcpio -P
-```
-this currently gives error missing rockhip_ebc!
-
-We can proceed anyway thanks to the debian kernel that is already working.
-
-### libinput config
-
-```bash
-sudo vim /mnt/etc/udev/rules.d/81-libinput-pinenote.rules
-```
-to add the additional settings
-```
-# downloaded from https://gitlab.com/hrdl/pinenote-shared/-/blob/main/etc/udev/rules.d/81-libinp
-ut-pinenote.rules
-# install to /etc/udev/rules.d
-ACTION=="remove", GOTO="libinput_device_group_end"
-KERNEL!="event[0-9]*", GOTO="libinput_device_group_end"
-
-ATTRS{phys}=="?*", ATTRS{name}=="cyttsp5", ENV{LIBINPUT_DEVICE_GROUP}="pinenotetouch"
-ATTRS{phys}=="?*", ATTRS{name}=="w9013 2D1F:0095 Stylus", ENV{LIBINPUT_DEVICE_GROUP}="pinenoteto
-uch"
-
-ATTRS{phys}=="?*", ATTRS{name}=="cyttsp5", ENV{LIBINPUT_CALIBRATION_MATRIX}="-1 0 1 0 -1 1"
-
-# Additional PineNote-specific settings suggested by hrdl
-ATTRS{name}=="cyttsp5", ENV{LIBINPUT_ATTR_PALM_PRESSURE_THRESHOLD}="27"
-ATTRS{name}=="cyttsp5", ENV{LIBINPUT_ATTR_THUMB_PRESSURE_THRESHOLD}="28"
-ATTRS{name}=="cyttsp5", ENV{LIBINPUT_ATTR_SIZE_HINT}="210x157"
-#ATTRS{name}=="cyttsp5", ENV{LIBINPUT_ATTR_RESOLUTION_HINT}="4x4"
-#ATTRS{name}=="cyttsp5", ENV{LIBINPUT_ATTR_PALM_SIZE_THRESHOLD}="1"
-
-LABEL="libinput_device_group_end"
+wget https://raw.githubusercontent.com/username/pine_debian2arch.sh
+chmod +x pine_debian2arch.sh
 
 ```
 
-### broadcome module feature disable
+### Add bash pine-specific bash scripts
 
-```bash
-vim /etc/modprobe.d/brcmfmac.conf
-```
-with:
-```
-options brcmfmac feature_disable=0x82000
-
-```
-### User and System Setup
-
-```bash
-# Re-enter chroot - if you are not in already
-sudo chroot /mnt /bin/bash
-
-#edit fstab to specify what and how to mount partitions
-vim /etc/fstab
-```
-as:
-```
-  /dev/mmcblk0p6 / ext4 defaults 0 1
-  /dev/mmcblk0p7 /home ext4 defaults 0 2
-```
-```bash
-# Create missing groups
-groupadd dialout
-groupadd plugdev
-groupadd bluetooth
-
-# create a user account
-# Note: In arch 'wheel' group is used for admin privileges - instead of 'sudo' group in Debian
-useradd -M -G wheel,dialout,audio,video,plugdev,bluetooth,render,input -s /bin/bash user
-
-passwd user  # set to 1234 or whatever
-
-# Enable sudo for wheel group and add the wheel 
-EDITOR=vim visudo -f /etc/sudoers.d/wheel
-```
-with this:
-```
-%wheel ALL=(ALL:ALL) ALL
-```
-
-### NetworkManager:
-```bash
-# Enable NetworkManager
-systemctl enable NetworkManager
-
-# Disable systemd-networkd (to prevent possible conflicts.. Added this as I was trying to resolve the wifi connection issue
-systemctl disable systemd-networkd.service
-systemctl disable systemd-networkd.socket
-systemctl disable systemd-networkd-wait-online.service
-
-# Enable wpa_supplicant
-systemctl enable wpa_supplicant
-
-```
-
-Configure network manager: I thought I could copy over to arch the conf file but it does not seem to autoconnect to the wifi after boot with the following configuration. Something is wrong but I cannot see it.
-
+Copy utility scripts from here
 ```bash
 # exit chroot
 exit
-
-# copy over the configuration files of the networks you have already setup in os1
-# Note: These will only work if the WiFi networks are available and configured in os1
-sudo cp -r /etc/NetworkManager/system-connections/* /mnt/etc/NetworkManager/system-connections/
-
-# and we re-enter to do the configs
-# Enter chroot
-sudo chroot /mnt /bin/bash
-
-# make sure permission and ownership is correct 
-chown -R root:root /etc/NetworkManager/system-connections/*
-sudo chmod 600 /etc/NetworkManager/system-connections/*
-
-vim /etc/NetworkManager/NetworkManager.conf
-```
-Edit to look like this:
-```
-  [main]
-  plugins=ifupdown,keyfile
-  dhcp=internal
-
-  [ifupdown]
-  managed=true
-
-  [connection]
-  wifi.powersave=2
-
-  [device]
-  wifi.scan-rand-mac-address=no
+sudo cp -r [github]/misc/bin/* /mnt/usr/local/bin/
+sudo chmod +x /mnt/usr/local/bin/*
 ```
 
-and add wifi spec in /etc/NetworkManager/conf.d/
-```bash
-vim /etc/NetworkManager/conf.d/wifi.conf
-```
-with this content:
-```
-[main]
-rf.wifi.enabled=true
-wifi.backend=wpa_supplicant
-```
+
+
+## Additional steps to complete the installation 
+
+The above should give a bootable system with console access over ssh or uart. 
+
+The following are necessary steps to have a graphical UI.
+
 
 ### Configure Greeter
 
 Configure greetd for the e-ink display:
 
+```
+
+sudo cp [github]/etc/greetd/* /mnt/etc/greetd/
+
+## enter CHROOT
+# if you use the greeter user, make sure the home directory is properly set and has correct permissions
+
+sudo usermod -d /etc/greetd greeter
+sudo chown -R greeter:greeter /etc/greetd
+
+## EXIT CHROOT
+
+
+```
+
 ```bash
+sudo chroot /mnt /bin/bash
 # enable greetd
 systemctl enable greetd
-
-
-# Edit greetd configuration file:
-vim /etc/greetd/config.toml
 ```
 
-with this:
-
+### Configure Sway and waybar
 ```
-[terminal]
-# The VT to run the greeter on. Can be "next", "current" or a number
-# designating the VT.
-vt = 1
-
-# The default session, also known as the greeter.
-[default_session]
-command = "gtkgreet"
-user = "greeter"
-
-[initial_session]
-command = "sway -c /etc/greetd/sway-config"
-user = "user"
-
-[environment]
-XDG_SESSION_TYPE = "wayland"
-WLR_RENDERER = "pixman" ## added this after some debugging not sure is helping
-WLR_RENDERER_ALLOW_SOFTWARE = "1" ## added this after some debugging not sure is helping
-```
-
-add a minimal sway-config file
-
-```bash
-vim /etc/greetd/sway-config
-```
-
-with this content:
-```
-for_window [app_id="regreet"] fullscreen disable
-
-# This isn't working well yet
-exec "gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true"
-exec "env SQUEEKBOARD_DEBUG=force-show squeekboard &"
-# exec "squeekboard &"
-exec "regreet; swaymsg exit"
-# exec "gtkgreet -l; swaymsg exit"
-include /etc/sway/config.d/*
-
-```
-Create PAM configurations for greetd and add nopasswordlogin for `user`.
-```bash
-vim /etc/pam.d/greetd
-```
-
-```
-  auth       required     pam_securetty.so
-  auth       requisite    pam_nologin.so
-  auth       include      system-local-login
-  account    include      system-local-login
-  session    include      system-local-login
-
-  # this should add nopassword login to pam
-  auth       sufficient   pam_succeed_if.so user ingroup nopasswdlogin
-```
-
-and this for nopassword login
-```bash
-# Add nopasswdlogin group
-groupadd nopasswdlogin
-usermod -aG nopasswdlogin user
-```
-
-### Configure Sway
-```bash
-# Create sway config in etc
-vim /etc/sway/config.d/pinenote.conf
-```
-with this:
-```
-  # PineNote specific configurations
-  output * bg #FFFFFF solid_color
-
-  # Disable xwayland explicitly: no need for this and X stuff
-  xwayland disable
-
-  # E-ink specific settings
-  output * max_render_time 1000
-  output * adaptive_sync off
+# we can copy in the .config of user in debian because this will be exactly the same home in arch
+sudo cp [github]misc/.config/* ~/.config/
 
 ```
 
@@ -477,19 +231,15 @@ sudo umount -R /mnt
 sudo reboot
 ```
 
-### Current Status
 
-This installation method successfully boots to login prompt but has some known issues:
+#### rot8 and lisgd
+```bash
+cd ~
 
-#### Critical Issues
-- UART keyboard input not working properly, preventing console login
-- WiFi doesn't connect automatically, limiting remote access
-- autologin/login is still a bit buggy
+git clone https://aur.archlinux.org/rot8-git.git # these will have to be install when home is mounted properly not over chroot
 
-#### Working Features
-- System boots without errors
-- Basic filesystem setup complete
-- User configuration and permissions set correctly
-- Sway starting correctly after login - Allows login via regreet
+git clone https://aur.archlinux.org/lisgd-git.git  # these will have to be install when home is mounted properly not over chroot
 
-PRs or suggestions to fix these issues are welcome.
+
+```
+

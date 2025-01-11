@@ -21,6 +21,9 @@ set $term kitty
 # on the original workspace that the command was run on.
 set $menu "toggle_menu.sh"
 
+## explicitly disable xwayland
+xwayland disable
+
 font pango:Noto Sans 20
 
 ### Output configuration

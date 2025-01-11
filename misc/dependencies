@@ -1,12 +1,12 @@
 brightnessctl
 iio-sensor-proxy
 jq
-lisgd
+lisgd # not available in arch mainline
 network-manager-applet
 noto-fonts
 noto-fonts-emoji
 nwg-menu
 python-i3ipc
 python-pydbus
-rot8
+rot8 # not available in arch mainline
 wtype
