@@ -23,6 +23,8 @@ sudo mount /dev/disk/by-partlabel/os2 /mnt
 ```bash
 sudo apt install pacman-package-manager arch-install-scripts
 
+sudo mkdir /etc/pacman.d/
+
 echo 'Server = http://mirror.archlinuxarm.org/$arch/$repo' |sudo tee -a /etc/pacman.d/mirrorlist
 
 for repo in core extra community alarm; do
